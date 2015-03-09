@@ -1,0 +1,6 @@
+data_files_path /usr/local/share/libRadtran/data/
+rte_solver disort
+pseudospherical
+aerosol_default
+output_quantity transmittance
+mol_abs_param reptran #lowtran 
