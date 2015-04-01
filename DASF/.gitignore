@@ -26,3 +26,5 @@ sph_alb.inp~
 sph_alb.txt
 test.txt
 up_trans.txt
+LUT_*.p
+
