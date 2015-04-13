@@ -4,7 +4,7 @@ A script that creates a pickles dict file from GOME-2 l1B data. Requires one
 argument which is the path and filename of the EPS format GOME-2 l1b file.
 Usage: $ ./DASF_GOME-2.py </path/to/file>
 The script creates a pickled dictionary file per orbit filtered according to
-the QA limits set out below. 
+the QA limits set out below.
 
 The script requires CODA library for python to be installed.
 
@@ -37,11 +37,11 @@ import time
 import pickle
 
 def mmol_Watt(mmols, wl):
-    '''A function that converts a measurement in micro mol photons to Watts. 
-    This is usefull in flux calculations. 
+    '''A function that converts a measurement in micro mol photons to Watts.
+    This is usefull in flux calculations.
     Input: mmols - mmols at wavelength, wl - wavelength in nm.
-    Output: Watts    
-    The conversion is based on the examples in 
+    Output: Watts
+    The conversion is based on the examples in
     http://5e.plantphys.net/article.php?ch=t&id=131
     '''
     E = 1.988e-16 / wl
@@ -50,9 +50,9 @@ def mmol_Watt(mmols, wl):
     # convert micromoles (umol) per m2 per sec to W per m2
     Watt = np.multiply(mmols*micro*avo, E)
     return Watt
-    
+
 def phot_Watt(photons, wl):
-    '''Function to convert radiant flux from photons / (cm2 s nm) to 
+    '''Function to convert radiant flux from photons / (cm2 s nm) to
     Watt / m2.
     Input: photons - photons at wavelenght, wl - wavelength in nm.
     Output: Watt - Watt / m2
@@ -61,7 +61,7 @@ def phot_Watt(photons, wl):
     photons *= 10000.
     # convert the solar irradiance from photons to mols
     avo = 6.02e23
-    mols = photons / avo 
+    mols = photons / avo
     # convert to mmols
     mmols = mols * 1.0e6
     Watt = mmol_Watt(mmols, wl)
@@ -72,7 +72,7 @@ def interpolate(rc, ic):
     wavelengths as the radiance spectrum. This is due to slight differences
     between the radiance and irradiance wavelength intervals.
     This function does not get passed the radiance and irradiance arrays but
-    only the indexes of the radiance wavelenght at which to interpolate, and 
+    only the indexes of the radiance wavelenght at which to interpolate, and
     the index to the upper irradiance wavelength used in the interpolation.
     Input: rc - radiance index, ic - irradiance index.
     Output: inter_irr - interpolated irradiance value.
@@ -83,7 +83,7 @@ def interpolate(rc, ic):
     irr_int = sol_irr[ic] - sol_irr[ic-1]
     inter_irr = sol_irr[ic-1] + frac * irr_int
     return inter_irr
-    
+
 # range of forward scans out of [0:31]
 forw_scans = np.arange(24)
 
@@ -150,11 +150,11 @@ for cur_scan in np.arange(n_mdr):
     es = coda.get_field_available(ef, 'MDR', cur_scan, 'Earthshine')
     if not(es):
         continue
-    
+
     # is this a nadir scan (0), not calibration etc?
     nad = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'OBSERVATION_MODE')
     nad = True if nad == 0 else False
-    
+
     # QA of scan.
     # is scan degraded due to instrument degradation?
     bad_ins = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'DEGRADED_INSTR_MDR')
@@ -169,61 +169,61 @@ for cur_scan in np.arange(n_mdr):
         f_miss = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'PCD_BASIC',\
             'F_MISS')
         bad_pro = True if f_miss != 0 else False
-        
-    
+
+
     # is this calibrated radiance (0) or reflectance (1)?
     rad_ref = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'OUTPUT_SELECTION')
     rad_ref = True if rad_ref == 0 else False
-    
+
     # if any above conditions are not met skip this scan
     if not(es) or not(nad) or bad_ins or bad_pro or not(rad_ref):
         continue
-        
-    for cur_pnt in forw_scans:  
+
+    for cur_pnt in forw_scans:
         # did cloud fraction retrieval work, if not skip point?
         cf = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'CLOUD', 'FAIL_FLAG',\
             cur_pnt)
         cf = True if cf == 0 else False
         if not(cf):
             continue
-        
+
         # is parameter for cloud fraction (0) not snow/ice (1), if not skip point?
         cf = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'CLOUD', 'FIT_MODE',\
             cur_pnt)
         cf = True if cf == 0 else False
         if not(cf):
             continue
-        
+
         # reading cloud fraction, and if > threshold skip point
         cf = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'CLOUD', 'FIT_2',\
             cur_pnt)
         if cf > cloud_thresh:
             continue
-        
+
         # reading solar zenith angle if greater than threshold skip point
         sol_zen = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'SOLAR_ZENITH', [1, cur_pnt])
         if sol_zen > sol_zen_lim:
             continue
-        
+
         # satellite zenith angle
         sat_zen = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'SAT_ZENITH', [1, cur_pnt])
         if sat_zen > sat_zen_lim:
             continue
-        
+
         # number of spectral records in band 4, and create point array for radiance
         n_spec = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'REC_LENGTH', 5)
         rad_arr = np.zeros(n_spec)
-        
+
         # placeholder for dud spectrum. Check against this after loop
         dud = False
-        
+
         # reading coordinates
         lat, lon  = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'CENTRE', cur_pnt)
-        
-        
+
+
         # TEMPORARY halt to see Amazon....
         '''
         if lat < 5.0 and lon < -53.0:
@@ -231,32 +231,32 @@ for cur_scan in np.arange(n_mdr):
         else:
             continue
         '''
-        
+
         for cur_spc in np.arange(n_spec):
             # reading radiance, error and stokes fraction
             rad, rad_e, st_f  = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'BAND_4',\
                 [cur_pnt,cur_spc])
-            
+
             # is the current point radiance nan or negative, ie ocean etc, then
             # skip the whole point?
             dud = True if rad < 0. or np.isnan(rad) else False
             if dud:
                 break
-            
+
             rad_arr[cur_spc] = rad
-            
+
         # skip point if dud in radiance array
         if dud:
             continue
-        
+
         # satellite azimuth angle
         sat_azi = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'SAT_AZIMUTH', [1, cur_pnt])
-        
+
         # reading solar azimuth angle
         sol_azi = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'SOLAR_AZIMUTH', [1, cur_pnt])
-        
+
         # reading in time of observation
         time_s = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_BASIC',\
             'UTC_TIME', cur_pnt)
@@ -265,17 +265,17 @@ for cur_scan in np.arange(n_mdr):
         pattern = '%Y-%m-%d %H:%M:%S'
         offset = time.mktime(time.strptime(date_time, pattern))
         time_s += offset
-        
+
         # reading in altitude of point
         alt = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'GEO_EARTH',\
             'SURFACE_ELEVATION', cur_pnt)
-        
+
         # reading wavelength for radiance data
         rad_lam = coda.fetch(ef, 'MDR', cur_scan, 'Earthshine', 'WAVELENGTH_4')
 
         # convert radiance and radiance error from photons to Watts
         rad_arr = phot_Watt(rad_arr, rad_lam)
-        
+
         # interpolate the solar irradiance data to the same wavelengths as the
         # radiance data
         n_rad_lam = len(rad_lam)
@@ -304,11 +304,12 @@ for cur_scan in np.arange(n_mdr):
         # into radiance, coordinate and wavelength arrays
         rad_arr = rad_arr[n: rc+1]
         rad_lam = rad_lam[n: rc+1]
-        
-        # calculate reflectance at TOA. 
+
+        # calculate reflectance at TOA.
         irr_arr = np.array(irr)
-        ref_toa_arr = rad_arr / (irr_arr * np.cos(sol_zen*np.pi/180.))
-        
+        # need to multiply by pi thus remove * pi in subsequent scripts...
+        ref_toa_arr = np.pi * rad_arr / (irr_arr * np.cos(sol_zen*np.pi/180.))
+
         # append point data to orbit lists
         #DASF.append(dasf)
         #QA_dasf.append((slope, intercept, r_value, p_value))
@@ -327,7 +328,7 @@ for cur_scan in np.arange(n_mdr):
         Sat_azi.append(sat_azi)
 
 # new line after stdout
-sys.stdout.write("\n")        
+sys.stdout.write("\n")
 # closes file to free memory
 coda.close(ef)
 
