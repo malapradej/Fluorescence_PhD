@@ -64,7 +64,7 @@ clf = obs['Clf']
 st_wl_lrt = 540.
 en_wl_lrt = en_wl*1000.
 resollrt = 2.
-wvc = 20. #40.
+wvc = 40.
 aot = 0.2
 press = 950. #hPa
 day = 25
@@ -219,6 +219,8 @@ inp_cloud_refl = inp_t % (sol_zen, sol_azi_lrt, np.cos(sat_zen*np.pi/180.)\
     , sat_azi, 0.0, alt, 'toa', st_wl_lrt, en_wl_lrt+1, 'uu')
 inp_cloud_refl = inp_cloud_refl + '\nwc_file 1D \
     /usr/local/share/libRadtran/examples/WCSIMPLE.DAT \ncloudcover wc 1'
+    # /usr/local/share/libRadtran/examples/WCSIMPLE.DAT
+    # /usr/local/share/libRadtran/examples/WCSIMPLE.DAT
 inp_t1 = inp_default + inp_t1
 inp_t2 = inp_default + inp_t2
 inp_atm_refl = inp_default + inp_atm_refl
@@ -330,30 +332,30 @@ wv = wv*1000.
 
 plt.plot(lam_gome, toa_refl_gome, 'm-', label='toa_refl_gome')
 
-plt.plot(wv, tr2_6s/5., 'k--', label='tr2_6s/5')
-plt.plot(wv, sph_alb_6s, 'b--', label='sph_alb_6s')
-plt.plot(wv, atm_refl_6s*4., 'c--', label='atm_refl_6s*4')
+#plt.plot(wv, tr2_6s/5., 'k--', label='tr2_6s/5')
+#plt.plot(wv, sph_alb_6s, 'b--', label='sph_alb_6s')
+#plt.plot(wv, atm_refl_6s*4., 'c--', label='atm_refl_6s*4')
 #plt.plot(wv, toa_refl_6s, 'm--', label='toa_refl_6s')
-plt.plot(wv, surf_refl_6s, 'r--', label='surf_refl_6s')
+#plt.plot(wv, surf_refl_6s, 'r--', label='surf_refl_6s')
 #plt.plot(wv, toa_refl_true_6s, 'r+', label='toa_refl_true_6s')
 #plt.plot(wv, sol_irr_6s/1000., label='sol_irr_6s W/m2/nm')
-plt.plot(lam_gome, tr2_lrt/5, 'k', label='tr2_lrt/5')
-plt.plot(lam_gome, sph_alb_lrt, 'b', label='sph_alb_lrt')
-plt.plot(lam_gome, atm_refl_lrt*4, 'c', label='atm_refl_lrt*4')
+#plt.plot(lam_gome, tr2_lrt/5, 'k', label='tr2_lrt/5')
+#plt.plot(lam_gome, sph_alb_lrt, 'b', label='sph_alb_lrt')
+#plt.plot(lam_gome, atm_refl_lrt*4, 'c', label='atm_refl_lrt*4')
 #plt.plot(lam, toa_refl_lrt, 'm', label='toa_refl_lrt')
 plt.plot(lam_gome, surf_refl_lrt, 'r', label='surf_refl_lrt')
 plt.plot(wls_ler_pmd, ler_min_pmd, 'g:', label='LER_PMD_MIN')
 plt.plot(wls_ler_pmd, ler_mode_pmd, 'g-.', label='LER_PMD_MODE')
 plt.plot(wls_ler_msc, ler_min_msc, 'm:', label='LER_MSC_MIN')
 plt.plot(wls_ler_msc, ler_mode_msc, 'm-.', label='LER_MSC_MODE')
-plt.plot(lam_gome, cld_toa_refl_lrt, 'm+', label='cld_toa_refl_lrt')
-plt.plot(lam_gome, cldless_surf_refl_lrt, 'r+', \
+plt.plot(lam_gome, cld_toa_refl_lrt, 'm--', label='cld_toa_refl_lrt')
+plt.plot(lam_gome, cldless_surf_refl_lrt, 'r--', \
     label='cldless_surf_refl_lrt')
 #plt.plot(lam, toa_refl_lrt_true, 'rx', label='toa_refl_lrt_true')
 plt.xlabel('Wavelength (nm)')
-plt.ylabel('Unitless ref/trans/alb')
+plt.ylabel('Unitless refl.')
 plt.xlim(st_wl*1000., en_wl_lrt)
-plt.ylim(0., 0.4)
+plt.ylim(-0.10, 0.4)
 plt.legend(loc='best', ncol=3)
 plt.title('obs_nr: %d, sat_zen: %.4f, sol_zen: %.4f, clf: %.3f' % (obs_nr, \
     sat_zen, sol_zen, clf))
