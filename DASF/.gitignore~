@@ -3,7 +3,7 @@ atm_refl.txt
 dbl_trans.txt
 down_trans.txt
 down_up_trans.txt
-figures
+figures/
 g2_ch2o_v5.3_hdf_conv.sh
 g2_ch2o_v5.3_hdf_ocra_ingest.py
 input_atm_path.inp
@@ -17,7 +17,7 @@ input.inp
 input_sph_alb.inp
 input_sph_alb.inp~
 input_up_trans.inp
-old
+old/
 randomseed
 sph_alb2.inp
 sph_alb2.inp~
@@ -26,3 +26,6 @@ sph_alb.inp~
 sph_alb.txt
 test.txt
 up_trans.txt
+LUT_*.p
+clf.txt
+input_clf.inp

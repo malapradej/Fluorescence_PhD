@@ -29,3 +29,6 @@ up_trans.txt
 LUT_*.p
 clf.txt
 input_clf.inp
+pca_object*
+cloud_temp.dat
+cloud_sims.h5
