@@ -1,12 +1,11 @@
 #!/usr/bin/python
 '''
-Script to create Lookup tables using libRadtran of atmospheric path reflectance, 
-double transmittance and spherical albedo. This script only creates the LUT 
-which can be used to create the Emulator. 
+Script to create Lookup tables using libRadtran of atmospheric path reflectance,
+double transmittance and spherical albedo. This script only creates the LUT
+which can be used to create the Emulator.
 Run the script with the parameters as arguments as follows:
-
 '''
-#Section below is only to import modules required and load the pickled dictionary file created in the DASF_GOME-2.py script. 
+#Section below is only to import modules required and load the pickled dictionary file created in the DASF_GOME-2.py script.
 
 import os
 import sys
@@ -35,7 +34,7 @@ mask = np.logical_and(np.logical_and(np.array(ds['Lon']) < -52, np.array(ds['Lon
 # various functions used later on
 
 def rel_azimuth(Sol_azi, Sat_azi):
-    '''A function that returns the relative azimuth angle difference 
+    '''A function that returns the relative azimuth angle difference
     between the sun and the satellite, where sun is at zero. This is
     relative to the libRadtran geometry. See notes on 4/3/15....
     '''
@@ -44,7 +43,7 @@ def rel_azimuth(Sol_azi, Sat_azi):
     Sat_azi = np.array(Sat_azi)
     rel = Sat_azi - Sol_azi
     rel = np.where(rel < 0., rel + 360., rel)
-    
+
     return rel
 
 Lon = np.array(ds['Lon'])[mask]
@@ -74,7 +73,7 @@ Alt = [Alt[i]/1000. for i in indices] # convert to km AMSL
 #rel_azia = np.array([170., 340., 350.]) # relative azimuth in libRadtran geometry
 #alta = np.array([0., 0.250]) # km AMSL
 atma = ['tropics'] #np.arange(['tropics', 'midlatitude_summer', 'midlatitude_winter', 'subarctic_summer', 'subarctic_winter'])
-aota = np.array([0., 0.2, 0.4, 0.6, 0.8, 1.0]) 
+aota = np.array([0., 0.2, 0.4, 0.6, 0.8, 1.0])
 wvca = np.array([0., 10., 20., 30., 40., 50., 60., 70., 80.]) # kg/m2
 pressa = np.array([900., 950., 1000, 1050., 1100.]) # hPa
 file_leaf = 'leaf_spectrum.txt'
@@ -119,7 +118,7 @@ def trans_double(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     t1_arr = t1_arr[:,1]
     # take in consideration the cosine of solar zenith see eq(6.6) in manual
     t1_arr = t1_arr / np.cos(sol_zen*np.pi/180.)
-    
+
     # the upward transmittance
     process = subprocess.Popen('uvspec', stdin=subprocess.PIPE, stdout=\
         subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -131,9 +130,9 @@ def trans_double(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     t2_arr = t2_arr[:,1]
     # take in consideration the cosine of solar zenith see eq(6.6) in manual
     t2_arr = t2_arr / np.cos(sat_zen*np.pi/180.)
-    
+
     tt_arr = t1_arr * t2_arr
-    
+
     que.put((lam, tt_arr))
 
 def spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -152,7 +151,7 @@ def spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     sph_alb_arr = np.reshape(sph_alb_arr, (-1,2))
     lam = sph_alb_arr[:,0]
     sph_alb_arr = sph_alb_arr[:,1]
-    
+
     que.put((lam, sph_alb_arr))
 
 def atm_path_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -171,7 +170,7 @@ def atm_path_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     ref_atm_arr = np.reshape(ref_atm_arr, (-1,2))
     lam = ref_atm_arr[:,0]
     ref_atm_arr = ref_atm_arr[:,1] * np.pi / np.cos(sol_zen*np.pi/180.)
-    
+
     que.put((lam, ref_atm_arr))
 
 def app_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -189,17 +188,17 @@ def app_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     sph_alb_arr = spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
         wl_max, atm, aot, wvc, press)[1]
     app_refl = ref_atm_arr + tt_arr*surf_alb / (1 - sph_alb_arr*surf_alb)
-    
+
     return (lam, app_refl)
 
 def convol_spec(lam, spec, fwhm):
     '''Convolves a spectrum with a Gaussina ILS with conversion from a FWHM.
     '''
     inter = (lam[1] - lam[0] + lam[-1] - lam[-2]) / 2.
-    std = fwhm / 2. / np.sqrt(2. * np.log(2.)) 
+    std = fwhm / 2. / np.sqrt(2. * np.log(2.))
     pix_std = std / inter
     G = gf(spec, pix_std)
-    
+
     return G
 
 def LUT_select(sol_zena, sat_zena, rel_azia, alta, wl_min, \
@@ -309,17 +308,17 @@ fl = open(fn, 'wb')
 pickle.dump(lut, fl)
 fl.close()
 
-# 
+#
 '''
 fn = 'LUT.p'
 fl = open(fn, 'rb')
 lut_test = pickle.load(fl)
 fl.close()
 '''
-# 
+#
 '''
 lut_test.keys()
 '''
-# 
+#
 
 

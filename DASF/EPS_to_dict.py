@@ -2,7 +2,7 @@
 """
 A script that creates a pickles dict file from GOME-2 l1B data. Requires one
 argument which is the path and filename of the EPS format GOME-2 l1b file.
-Usage: $ ./DASF_GOME-2.py </path/to/file>
+Usage: $ ./EPS_to_dict.py </path/to/file>
 The script creates a pickled dictionary file per orbit filtered according to
 the QA limits set out below.
 
@@ -88,7 +88,7 @@ def interpolate(rc, ic):
 forw_scans = np.arange(24)
 
 # cloud fraction threshold
-cloud_thresh = 0.1
+cloud_thresh = 1.0
 
 # solar zenith angle threshold
 sol_zen_lim = 80.0
