@@ -120,6 +120,11 @@ plt.ylabel('Reflectance')
 plt.ylim([0,1.1])
 plt.xlim(min(wls), max(wls))
 
+# select only the wavelengths over the red-edge
+min_wl = 680
+spec_df = spec_df[spec_df.index>=min_wl]
+
+
 # fit the PCA to the cloud data
 cloud_specs = np.array(spec_df).T
 pca = PCA(n_components=n_comp)
