@@ -1,13 +1,13 @@
 #!/usr/bin/python
 '''
-Lookup table for libRadtran atmospheric path reflectance, double transmittance and 
-spherical albedo. This notebook is to help show the proof of concept of the 
-Emulation of libRadtran. A selection of GOME-2 scanned points over the Amazon 
-will be used. This script only creates the LUT which can be used to create the 
-Emulator. 
+Lookup table for libRadtran atmospheric path reflectance, double transmittance and
+spherical albedo. This notebook is to help show the proof of concept of the
+Emulation of libRadtran. A selection of GOME-2 scanned points over the Amazon
+will be used. This script only creates the LUT which can be used to create the
+Emulator.
 Run the script with the indices of the points needed as arguments.
 '''
-#Section below is only to import modules required and load the pickled dictionary file created in the DASF_GOME-2.py script. 
+#Section below is only to import modules required and load the pickled dictionary file created in the DASF_GOME-2.py script.
 
 import os
 import sys
@@ -35,8 +35,35 @@ mask = np.logical_and(np.logical_and(np.array(ds['Lon']) < -52, np.array(ds['Lon
 
 # various functions used later on
 
+from scipy import signal
+
+fwhm = 0.4931 # fwhm of slit function nm
+w_slit = 2 # width of slit function in nm
+
+def slit_smooth(lam, spectrum, fwhm, width):
+    '''
+    Function that applies the gaussian slit function with known FWHM to spectrum.
+    It will replace the boundaries of the smoothed spectrum which are affected by
+    zero padding with the original spectrum.
+    Input:
+    lam - wavelenght array in nm
+    spectrum - the spectrum to convolve
+    fwhm - the full width half maximum of the gaussian in nm
+    width - the width of the slit function in nm
+    Output:
+    convol - smoothed spectrum
+    '''
+    resol = np.average(np.diff(lam)) # average spectral resol of model in nm
+    intervals = np.ceil((width / resol)+1) # the number of intervals in the width of slit
+    slit = signal.gaussian(intervals, fwhm/2.3548201*intervals/width)
+    convol = signal.fftconvolve(spectrum, slit/np.sum(slit), mode='same')
+    hwidth = (intervals-1)/2
+    convol[:intervals] = spectrum[:intervals]
+    convol[-intervals-1:] = spectrum[-intervals-1:]
+    return convol
+
 def rel_azimuth(Sol_azi, Sat_azi):
-    '''A function that returns the relative azimuth angle difference 
+    '''A function that returns the relative azimuth angle difference
     between the sun and the satellite, where sun is at zero. This is
     relative to the libRadtran geometry. See notes on 4/3/15....
     '''
@@ -45,7 +72,7 @@ def rel_azimuth(Sol_azi, Sat_azi):
     Sat_azi = np.array(Sat_azi)
     rel = Sat_azi - Sol_azi
     rel = np.where(rel < 0., rel + 360., rel)
-    
+
     return rel
 
 Lon = np.array(ds['Lon'])[mask]
@@ -69,17 +96,22 @@ Sol_zen = [Sol_zen[i] for i in indices]
 Sol_azi = [Sol_azi[i] for i in indices]
 Rel_azi = [Rel_azi[i] for i in indices]
 Alt = [Alt[i]/1000. for i in indices] # convert to km AMSL
+Lon = [Lon[i] for i in indices]
+Lat = [Lat[i] for i in indices]
+Lam = [Lam[i] for i in indices]
+Ref_toa = [Ref_toa[i] for i in indices]
+CF = [CF[i] for i in indices]
 
 #sol_zena = np.array([40.]) # degrees
 #sat_zena = np.array([0., 10., 20., 30.])
 #rel_azia = np.array([170., 340., 350.]) # relative azimuth in libRadtran geometry
 #alta = np.array([0., 0.250]) # km AMSL
 atma = ['tropics'] #np.arange(['tropics', 'midlatitude_summer', 'midlatitude_winter', 'subarctic_summer', 'subarctic_winter'])
-aota = np.array([0., 0.2, 0.4, 0.6, 0.8, 1.0]) 
-wvca = np.array([0., 10., 20., 30., 40., 50., 60., 70., 80.]) # kg/m2
-pressa = np.array([900., 950., 1000, 1050., 1100.]) # hPa
+aota = np.array([0., 0.2]) #np.linspace(0.0, 1.0, 21.0, endpoint=True) #np.array([0., 0.2, 0.4, 0.6, 0.8, 1.0])
+wvca = np.array([0.0, 10.]) #np.linspace(0.0, 80.0, 21.0, endpoint=True) #np.array([0., 10., 20., 30., 40., 50., 60., 70., 80.]) # kg/m2
+pressa = np.array([900., 950.]) #np.linspace(900., 1100., 21., endpoint=True) #np.array([900., 950., 1000, 1050., 1100.]) # hPa
 file_leaf = 'leaf_spectrum.txt'
-wl_min, wl_max = (540., 760.)
+wl_min, wl_max = (540., 800.)
 w = np.genfromtxt(file_leaf)
 wl = w[:,0]
 w = np.sum(w[:,1:], axis=1)
@@ -120,7 +152,7 @@ def trans_double(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     t1_arr = t1_arr[:,1]
     # take in consideration the cosine of solar zenith see eq(6.6) in manual
     t1_arr = t1_arr / np.cos(sol_zen*np.pi/180.)
-    
+
     # the upward transmittance
     process = subprocess.Popen('uvspec', stdin=subprocess.PIPE, stdout=\
         subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -132,9 +164,9 @@ def trans_double(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     t2_arr = t2_arr[:,1]
     # take in consideration the cosine of solar zenith see eq(6.6) in manual
     t2_arr = t2_arr / np.cos(sat_zen*np.pi/180.)
-    
+
     tt_arr = t1_arr * t2_arr
-    
+
     que.put((lam, tt_arr))
 
 def spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -153,7 +185,7 @@ def spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     sph_alb_arr = np.reshape(sph_alb_arr, (-1,2))
     lam = sph_alb_arr[:,0]
     sph_alb_arr = sph_alb_arr[:,1]
-    
+
     que.put((lam, sph_alb_arr))
 
 def atm_path_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -172,7 +204,7 @@ def atm_path_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     ref_atm_arr = np.reshape(ref_atm_arr, (-1,2))
     lam = ref_atm_arr[:,0]
     ref_atm_arr = ref_atm_arr[:,1] * np.pi / np.cos(sol_zen*np.pi/180.)
-    
+
     que.put((lam, ref_atm_arr))
 
 def app_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
@@ -190,30 +222,31 @@ def app_refl(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
     sph_alb_arr = spher_alb(sol_zen, sat_zen, rel_azi,  alt, wl_min, \
         wl_max, atm, aot, wvc, press)[1]
     app_refl = ref_atm_arr + tt_arr*surf_alb / (1 - sph_alb_arr*surf_alb)
-    
+
     return (lam, app_refl)
 
 def convol_spec(lam, spec, fwhm):
     '''Convolves a spectrum with a Gaussina ILS with conversion from a FWHM.
     '''
     inter = (lam[1] - lam[0] + lam[-1] - lam[-2]) / 2.
-    std = fwhm / 2. / np.sqrt(2. * np.log(2.)) 
+    std = fwhm / 2. / np.sqrt(2. * np.log(2.))
     pix_std = std / inter
     G = gf(spec, pix_std)
-    
+
     return G
 
 def LUT_select(sol_zena, sat_zena, rel_azia, alta, wl_min, \
-        wl_max, atma, aota, wvca, pressa):
+        wl_max, atma, aota, wvca, pressa, Lat, Lon, CF, Lam, Ref_toa):
     '''A function that creates a look-up table for all the different iterable
     parameters provided. Version for only a select number of points.
     '''
     tots = len(sol_zena)*len(atma)*len(aota)*len(wvca)*len(pressa)
     ite = 0
     descr = ['lam', 'atm_path', 'dbl_trans', 'spher_alb', 'sol_zen', 'sat_zen', 'rel_azi',\
-             'alt', 'atm', 'AOT', 'WVC', 'press']
+             'alt', 'atm', 'AOT', 'WVC', 'press', 'Lat', 'Lon', 'CF', 'Lam_g', 'Ref_toa']
     lut = {k: list() for k in descr}
-    for sz, vz, ra, al, in zip(sol_zena, sat_zena, rel_azia, alta):
+    for sz, vz, ra, al, lat, lon, cf, lam_g, ref_toa in zip(sol_zena, sat_zena,\
+            rel_azia, alta, Lat, Lon, CF, Lam, Ref_toa):
         for at in atma:
             for ao in aota:
                 for wv in wvca:
@@ -234,12 +267,16 @@ def LUT_select(sol_zena, sat_zena, rel_azia, alta, wl_min, \
                             wl_max, at, ao, wv, pr, que3))
                         p3.start()
                         lam, apr = que1.get()
+                        apr = slit_smooth(lam, apr, fwhm, w_slit)
                         p1.join()
                         lam, dtt = que2.get()
+                        dtt = slit_smooth(lam, dtt, fwhm, w_slit)
                         p2.join()
                         lam, sal = que3.get()
+                        sal = slit_smooth(lam, sal, fwhm, w_slit)
                         p3.join()
-                        vals = [lam, apr, dtt, sal, sz, vz, ra, al, at, ao, wv, pr]
+                        vals = [lam, apr, dtt, sal, sz, vz, ra, al, at, ao, wv, pr, lat,\
+                                lon, cf, lam_g, ref_toa]
                         for k, v in zip(descr, vals):
                             lut[k].append(v)
     sys.stdout.write("\n")
@@ -248,7 +285,7 @@ def LUT_select(sol_zena, sat_zena, rel_azia, alta, wl_min, \
 # <codecell>
 
 lut = LUT_select(Sol_zen, Sat_zen, Rel_azi, Alt, wl_min, \
-        wl_max, atma, aota, wvca, pressa)
+        wl_max, atma, aota, wvca, pressa, Lat, Lon, CF, Lam, Ref_toa)
 
 # the LUT fn below is commented out and will be the template for the final one....
 
@@ -310,17 +347,17 @@ fl = open(fn, 'wb')
 pickle.dump(lut, fl)
 fl.close()
 
-# 
+#
 '''
 fn = 'LUT.p'
 fl = open(fn, 'rb')
 lut_test = pickle.load(fl)
 fl.close()
 '''
-# 
+#
 '''
 lut_test.keys()
 '''
-# 
+#
 
 
