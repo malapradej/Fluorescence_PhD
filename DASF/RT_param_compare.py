@@ -57,7 +57,7 @@ sol_azi_lrt = 0.
 sat_zen = obs['Sat_zen']
 
 # select observation indices in obs file
-goodlut = np.where(abs(lut['sat_zen'] - sat_zen) < 0.0001)[0][0]
+goodlut = np.where(abs(lut['sat_zen'] - sat_zen) < 0.001)[0][0]
 sat_azi = lut['rel_azi'][goodlut]
 alt = lut['alt'][goodlut]
 clf = obs['Clf']
@@ -125,7 +125,7 @@ def toa_refl_fun(surf_refl, atm_refl, tr2, sph_alb):
 # the 6S part
 
 s = SixS()
-s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.Tropical)
+s.atmos_profile = AtmosProfile.PredefinedType(AtmosProfile.USStandard1962)
 s.altitudes.set_target_custom_altitude(alt)
 s.altitudes.set_target_pressure(press/1000.) # mb
 s.altitudes.set_sensor_satellite_level()
@@ -192,8 +192,8 @@ surf_refl_6s = surf_refl_fun(toa_refl_6s, atm_refl_6s, tr2_6s, sph_alb_6s)
 # the libRadtran part
 
 inp_default = 'data_files_path /usr/local/share/libRadtran/data/\n\
-    output_quantity transmittance \nmol_abs_param reptran\n\
-    atmosphere_file tropics \nrte_solver disort \naerosol_default \
+    output_quantity transmittance \nmol_abs_param reptran\n pseudospherical\n\
+    atmosphere_file US-standard \nrte_solver disort \naerosol_default \
     \naerosol_species_file continental_average \
     \naerosol_set_tau_at_wvl 550 %.3f \nmol_modify H2O %.3f MM \
     \nwavelength 400.0 1400.0 \npressure %.3f\
@@ -330,33 +330,35 @@ cldless_surf_refl_lrt = surf_refl_fun(cldless_toa_refl_lrt, atm_refl_lrt,\
 
 wv = wv*1000.
 
-plt.plot(lam_gome, toa_refl_gome, 'm-', label='toa_refl_gome')
+#plt.plot(lam_gome, toa_refl_gome, 'm-', label='toa_refl_gome')
 
-#plt.plot(wv, tr2_6s/5., 'k--', label='tr2_6s/5')
-#plt.plot(wv, sph_alb_6s, 'b--', label='sph_alb_6s')
-#plt.plot(wv, atm_refl_6s*4., 'c--', label='atm_refl_6s*4')
+plt.plot(wv, tr2_6s/5., 'k--', label='tr2_6s/5')
+plt.plot(wv, sph_alb_6s, 'b--', label='sph_alb_6s')
+plt.plot(wv, atm_refl_6s*4., 'c--', label='atm_refl_6s*4')
 #plt.plot(wv, toa_refl_6s, 'm--', label='toa_refl_6s')
 #plt.plot(wv, surf_refl_6s, 'r--', label='surf_refl_6s')
 #plt.plot(wv, toa_refl_true_6s, 'r+', label='toa_refl_true_6s')
 #plt.plot(wv, sol_irr_6s/1000., label='sol_irr_6s W/m2/nm')
-#plt.plot(lam_gome, tr2_lrt/5, 'k', label='tr2_lrt/5')
-#plt.plot(lam_gome, sph_alb_lrt, 'b', label='sph_alb_lrt')
-#plt.plot(lam_gome, atm_refl_lrt*4, 'c', label='atm_refl_lrt*4')
+plt.plot(lam_gome, tr2_lrt/5, 'k', label='tr2_lrt/5')
+plt.plot(lam_gome, sph_alb_lrt, 'b', label='sph_alb_lrt')
+plt.plot(lam_gome, atm_refl_lrt*4, 'c', label='atm_refl_lrt*4')
 #plt.plot(lam, toa_refl_lrt, 'm', label='toa_refl_lrt')
-plt.plot(lam_gome, surf_refl_lrt, 'r', label='surf_refl_lrt')
-plt.plot(wls_ler_pmd, ler_min_pmd, 'g:', label='LER_PMD_MIN')
-plt.plot(wls_ler_pmd, ler_mode_pmd, 'g-.', label='LER_PMD_MODE')
-plt.plot(wls_ler_msc, ler_min_msc, 'm:', label='LER_MSC_MIN')
-plt.plot(wls_ler_msc, ler_mode_msc, 'm-.', label='LER_MSC_MODE')
-plt.plot(lam_gome, cld_toa_refl_lrt, 'm--', label='cld_toa_refl_lrt')
-plt.plot(lam_gome, cldless_surf_refl_lrt, 'r--', \
-    label='cldless_surf_refl_lrt')
+#plt.plot(lam_gome, surf_refl_lrt, 'r', label='surf_refl_lrt')
+#plt.plot(wls_ler_pmd, ler_min_pmd, 'g:', label='LER_PMD_MIN')
+#plt.plot(wls_ler_pmd, ler_mode_pmd, 'g-.', label='LER_PMD_MODE')
+#plt.plot(wls_ler_msc, ler_min_msc, 'm:', label='LER_MSC_MIN')
+#plt.plot(wls_ler_msc, ler_mode_msc, 'm-.', label='LER_MSC_MODE')
+#plt.plot(lam_gome, cld_toa_refl_lrt, 'm--', label='cld_toa_refl_lrt')
+#plt.plot(lam_gome, cldless_surf_refl_lrt, 'r--', \
+#    label='cldless_surf_refl_lrt')
 #plt.plot(lam, toa_refl_lrt_true, 'rx', label='toa_refl_lrt_true')
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Unitless refl.')
 plt.xlim(st_wl*1000., en_wl_lrt)
-plt.ylim(-0.10, 0.4)
+plt.ylim(0.0, 0.3)
 plt.legend(loc='best', ncol=3)
-plt.title('obs_nr: %d, sat_zen: %.4f, sol_zen: %.4f, clf: %.3f' % (obs_nr, \
-    sat_zen, sol_zen, clf))
+#plt.title('obs_nr: %d, sat_zen: %.4f, sol_zen: %.4f, clf: %.3f' % (obs_nr, \
+#    sat_zen, sol_zen, clf))
+plt.title('sat_zen: %.2f, sol_zen: %.2f, rel_azi_lrt: %.2f, \naot: %.2f, wvc: %.2f, press: %.2f, alt: %.2f' \
+    % (sat_zen, sol_zen, sat_azi, aot, wvc, press, alt))
 plt.show()
